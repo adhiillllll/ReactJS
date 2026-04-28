@@ -1,56 +1,76 @@
-import { useState,useRef,useEffect } from 'react'
-import TodoList from './TodoList';
-import { v4 as uuidv4 } from 'uuid';
-
+import { useState, useEffect } from 'react'
+import TodoList from './components/TodoList'
+import { v4 as uuidv4 } from 'uuid'
+import './App.css'
+import addIcon from './assets/add.png'
 
 const LOCAL_STORAGE_KEY = 'todoApp=todos'
 
-function App(){
+function App() {
+  const [todos, setTodos] = useState([])
+  const [input, setInput] = useState('')
 
-const [todos , setTodos] = useState([])
-const todoNameRef = useRef()
+  useEffect(() => {
+    const storedTodos = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]")
+    setTodos(storedTodos)
+  }, [])
 
-useEffect(() => {
-  const storedTodos = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY))
-  if (storedTodos) setTodos(storedTodos)
-}, [])
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos))
+  }, [todos])
 
-useEffect(() => {
-  localStorage.setItem(LOCAL_STORAGE_KEY,JSON.stringify(todos))
-}, [todos])
+  function toggleTodo(id) {
+    setTodos(prev =>
+      prev.map(todo =>
+        todo.id === id ? { ...todo, complete: !todo.complete } : todo
+      )
+    )
+  }
 
-function toggleTodo(id){
-  const newTodos = [...todos]
-  const todo = newTodos.find(todo => todo.id === id )
-  todo.complete = !todo.complete
-  setTodos(newTodos)
-}
+  function deleteTodo(id) {
+    setTodos(prev => prev.filter(todo => todo.id !== id))
+  }
 
-function handleAddTodo(e){
-  const name = todoNameRef.current.value
-  if(name === '') return
-  console.log(name);
-  setTodos(prevTodos => {
-    return[...prevTodos,{id:uuidv4() , name:name , complete:false}]
-  })
-  todoNameRef.current.value = null 
-}
+  function handleAddTodo() {
+    if (input.trim() === '') return
 
-function handleClearTodos(){
-  const newTodos = todos.filter ( todo => !todo.complete)
-  setTodos(newTodos);
-}
+    setTodos(prev => [
+      ...prev,
+      { id: uuidv4(), name: input, complete: false }
+    ])
+
+    setInput('')
+  }
+
+  function handleClearTodos() {
+    setTodos(prev => prev.filter(todo => !todo.complete))
+  }
 
   return (
-    <>
-      <TodoList todos={todos} toggleTodo={toggleTodo}/>
-      <input ref={todoNameRef} type="text" />
-      <button onClick={handleAddTodo}>Add Todo</button>
-      <button onClick={handleClearTodos}>Clear complete</button>
-      <div>{todos.filter(todo => !todo.complete).length} left to do</div>
-    </>
+    <div className="container">
+      <h2>Todo App</h2>
+
+      <div className="input-group">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
+          placeholder="Add today's task..."
+        />
+        <button onClick={handleAddTodo} className="add-btn">
+          <img src={addIcon} alt="add" />
+        </button>
+      </div>
+
+      <TodoList  todos={todos}   toggleTodo={toggleTodo}  deleteTodo={deleteTodo} />
+
+      <p>{todos.filter(t => !t.complete).length} tasks left</p>
+
+      <button onClick={handleClearTodos}>
+        Clear Completed
+      </button>
+    </div>
   )
 }
 
-
-export default App;
+export default App
